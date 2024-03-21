@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es-NI">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cotizador Lite Nicaladrillos</title>
+    <link rel="stylesheet" href="./public/style.css">
+    <link rel="shortcut icon" href="./public/favicon-180x180.png" type="image/x-icon">
+</head>
+<body class="bg-gray-100 p-8 print:bg-white print:p-0">
+    <div class="container mx-auto bg-white shadow-lg p-8 print:shadow-none print:max-w-full print:m-0 print:p-0">
+
+        <!-- Encabezado -->
+        <header class="flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold">Nicaladrillos | Luz María Pérez</h1>
+                <p><span class="font-bold">RUC:</span> 2842001920002R <span class="font-bold text-navy">* Régimen Cuota Fija</span></p>
+                <p><span class="font-bold">Teléfono:</span> <span class="tracking-wide font-semibold">8121-3372</span></p>
+                <p>info@nicaladrillos.com | www.nicaladrillos.com</p>
+            </div>
+            <div class="flex flex-col items-center">
+                <div class="flex items-center mb-4">
+                    <a href="https://www.nicaladrillos.com/" class="flex items-center">
+                        <div>
+                            <span class="font-bold text-3xl tracking-tight">Nica<span class="font-bold text-3xl tracking-tight text-terracotta">Ladrillos</span></span>
+                            <p class="text-[0.55rem] text-black text-center font-bold">
+                                ¡Tu proyecto de construcción está garantizado!
+                            </p>
+                        </div>
+                    </a>
+                </div>
+                <p class="font-bold text-3xl mb-1">Cotización</p>
+                <p class="text-navy font-bold text-3xl mb-1" id="numeroCotizacion" contenteditable="true">#COT</p>
+                <p class="text-sm" id="fechaCotizacion">Fecha/Hora Actual</p>
+            </div>
+        </header>
+
+        <!-- Información del Cliente -->
+        <section class="mb-5">
+            <h2 class="text-lg font-bold mb-3">Cotización para:</h2>
+            <input type="text" id="nombreCliente" placeholder="Nombre del Cliente" class="border w-full border-none outline-none print:shadow-none font-semibold text-lg">
+            <div id="infoRUC">
+                <input type="text" id="rucCliente" placeholder="RUC" class="border w-full border-none outline-none print:shadow-none">
+            </div>
+        </section>        
+        <!-- Botón para agregar producto -->
+        <button id="btnAgregarProducto" class="mb-2 bg-green-700 hover:bg-green-400 text-white font-bold py-2 px-4 rounded print:hidden">
+            &#43;
+        </button>        
+
+        <section class="mb-8">
+            <table class="min-w-full table-auto">
+                <thead class="bg-terracotta">
+                    <tr>
+                        <th class="px-4 py-2 text-white">Producto y Descripción</th>
+                        <th class="px-4 py-2 text-white">Cantidad</th>
+                        <th class="px-4 py-2 text-white">Precio Unitario (C$)</th>
+                        <th class="px-4 py-2 text-white">Importe (C$)</th>
+                    </tr>
+                </thead>
+                <tbody id="productosCotizacion">
+                    <!-- Inicialmente vacío; las filas se agregarán dinámicamente aquí -->
+                </tbody>                
+            </table>
+        </section>
+        
+        <!-- Totales -->
+        <section class="text-right mb-8">
+            <p class="mb-2">Subtotal: <span id="subtotal">C$0.00</span></p>
+            <p class="mb-2">IVA: No aplica</p>
+            <p class="font-bold">Total: <span id="total">C$0.00</span></p>
+        </section>
+        
+        <!-- Botón de Impresión -->
+        <button id="btnImprimir" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded print:hidden">
+            Imprimir Cotización
+        </button>
+
+        <!-- Notas Adicionales -->
+        <section class="mb-8">
+            <h2 class="text-xl font-bold mb-4">Notas Adicionales</h2>
+            <p class="mb-3 text-lg leading-relaxed" contenteditable="true">Esta cotización es válida hasta el <span id="fechaValidez">[Fecha]</span>.</p>
+            <h3 class="text-lg font-bold mt-4 mb-2">Formas de Pago</h3>
+            <p class="mb-3">Puede realizar su pago a través de transferencia o depósito bancario en cualquiera de las siguientes cuentas en córdobas:</p>
+            <ul class="list-disc ml-8 mb-3">
+                <li class="mb-1">BANPRO: 10020200517833</li>
+                <li class="mb-1">BAC: 368169462</li>
+                <li>LAFISE: 132020906</li>
+            </ul>
+            <p class="mb-3">Titular de la cuenta: Luz María Pérez.</p>
+            <p>Nota importante: Es necesario el pago completo para procesar su pedido.</p>
+        </section>
+        
+
+        <!-- Pie de página -->
+        <footer class="text-center text-gray-600 text-sm">
+            <p>© 2024 Nicaladrillos * Luz María Pérez. Todos los derechos reservados.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Función para formatear la fecha y hora con AM/PM
+        function formatAMPM(date) {
+            let hours = date.getHours();
+            let minutes = date.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            const strTime = hours + ':' + minutes + ' ' + ampm;
+            return date.toLocaleDateString('es-ES') + ' ' + strTime;
+        }
+    
+        // Función para formatear el importe como moneda
+        function formatearComoMoneda(numero) {
+            const formatter = new Intl.NumberFormat('es-NI', {
+                style: 'currency',
+                currency: 'NIO',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            });
+            return formatter.format(numero);
+        }
+    
+        // Función para agregar un nuevo producto
+        function agregarProducto() {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="border px-4 py-2 text-center w-[470px]" contenteditable="true"></td>
+                <td class="border px-4 py-2 text-center w-48" contenteditable="true"></td>
+                <td class="border px-4 py-2 text-center w-48" contenteditable="true"></td>
+                <td class="border px-4 py-2 text-center w-48"></td>
+                <td class="border px-4 py-2 text-center w-20 print:hidden">
+                    <button class="eliminarProducto text-red-500">&#10006;</button>
+                </td>
+            `;
+            const tbody = document.getElementById('productosCotizacion');
+            tbody.appendChild(tr);
+
+            // Agrega event listeners para validar la entrada numérica
+            const celdaCantidad = tr.cells[1];
+            const celdaPrecio = tr.cells[2];
+            celdaCantidad.addEventListener('input', validarEntradaNumerica);
+            celdaPrecio.addEventListener('input', validarEntradaNumerica);
+
+            tr.querySelector('.eliminarProducto').addEventListener('click', () => {
+                tr.remove();
+                actualizarTotales();
+            });
+        }
+
+        // Función para validar la entrada numérica
+        function validarEntradaNumerica(e) {
+            const valor = e.target.textContent;
+            if (!/^\d*\.?\d*$/.test(valor)) { // Permite números y puntos decimales
+                alert("Por favor, ingrese solo números.");
+                e.target.textContent = ''; // Limpia el contenido si no es numérico
+            }
+        }
+
+
+// Función para validar la entrada numérica
+function validarEntradaNumerica(e) {
+    const valor = e.target.textContent;
+    if (!/^\d*\.?\d*$/.test(valor)) { // Permite números y puntos decimales
+        alert("Por favor, ingrese solo números.");
+        e.target.textContent = ''; // Limpia el contenido si no es numérico
+    }
+}
+
+    
+        // Función para actualizar el subtotal y total
+        function actualizarTotales() {
+            let subtotal = 0;
+            const tbody = document.getElementById('productosCotizacion');
+            tbody.querySelectorAll('tr').forEach(tr => {
+                const cantidad = parseFloat(tr.cells[1].textContent) || 0;
+                const precio = parseFloat(tr.cells[2].textContent) || 0;
+                const importe = cantidad * precio;
+                tr.cells[3].textContent = formatearComoMoneda(importe);
+                subtotal += importe;
+            });
+    
+            document.getElementById('subtotal').textContent = formatearComoMoneda(subtotal);
+            document.getElementById('total').textContent = formatearComoMoneda(subtotal); // Asumiendo que el IVA no aplica
+        }
+    
+        // Función para actualizar el título de la página
+        function actualizarTitulo() {
+            const numeroCotizacion = document.getElementById('numeroCotizacion');
+            const nombreCliente = document.getElementById('nombreCliente');
+            let numero = numeroCotizacion.textContent.trim();
+            let cliente = nombreCliente.value.trim().replace(/[. ]/g, '-');
+            document.title = `${numero} - Nicaladrillos - ${cliente}`;
+        }
+        
+        //Función para validar que los datos esten ingresados
+        function validarCotizacion() {
+            const nombreCliente = document.getElementById('nombreCliente').value.trim();
+            const numeroCotizacion = document.getElementById('numeroCotizacion').textContent.trim();
+            const tieneProductos = document.getElementById('productosCotizacion').querySelectorAll('tr').length > 0;
+            const patronNumeroCotizacion = /^#\d+$/; // Verifica si es un '#' seguido de uno o más dígitos
+
+            if (!nombreCliente) {
+                alert("Por favor, ingrese el nombre del cliente.");
+                return false;
+            }
+            if (!patronNumeroCotizacion.test(numeroCotizacion)) {
+                alert("Por favor, ingrese un número de cotización válido (p.ej., #321).");
+                return false;
+            }
+            if (!tieneProductos) {
+                alert("Por favor, agregue al menos un producto a la cotización.");
+                return false;
+            }
+            return true;
+        }
+
+
+    
+        // Event listeners y lógica inicial
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('fechaCotizacion').textContent = formatAMPM(new Date());
+    
+            const fechaValidez = new Date();
+            fechaValidez.setDate(fechaValidez.getDate() + 15);
+            document.getElementById('fechaValidez').textContent = fechaValidez.toLocaleDateString('es-ES');
+    
+            document.getElementById('btnImprimir').addEventListener('click', () => {
+                if (!validarCotizacion()) {
+                    return;
+                }
+
+                const nombreCliente = document.getElementById('nombreCliente');
+                const rucCliente = document.getElementById('rucCliente');
+                const infoRUC = document.getElementById('infoRUC'); // Contenedor del RUC
+
+                if (nombreCliente.value.trim() === '') {
+                    nombreCliente.value = 'Nombre del Cliente';
+                }
+
+                // Guardar el estado actual del display y ocultar si está vacío
+                const displayActual = infoRUC.style.display;
+                infoRUC.style.display = rucCliente.value.trim() ? displayActual : 'none';
+
+                window.print();
+
+                // Restablecer la visibilidad del contenedor del RUC después de la impresión
+                setTimeout(() => {
+                    infoRUC.style.display = displayActual;
+                }, 500);
+            });
+
+
+
+    
+            document.getElementById('btnAgregarProducto').addEventListener('click', () => {
+                agregarProducto();
+                actualizarTotales();
+            });
+    
+            const tbody = document.getElementById('productosCotizacion');
+            tbody.addEventListener('input', actualizarTotales);
+    
+            const numeroCotizacion = document.getElementById('numeroCotizacion');
+            const nombreCliente = document.getElementById('nombreCliente');
+            numeroCotizacion.addEventListener('input', actualizarTitulo);
+            nombreCliente.addEventListener('input', actualizarTitulo);
+        });
+    </script>
+    
+</body>
+</html>
