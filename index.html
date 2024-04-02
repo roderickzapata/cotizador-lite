@@ -38,15 +38,32 @@
         <!-- Información del Cliente -->
         <section class="mb-5">
             <h2 class="text-lg font-bold mb-3">Cotización para:</h2>
+            <form id="formularioCotizacion">
             <input type="text" id="nombreCliente" placeholder="Nombre del Cliente" class="border w-full border-none outline-none print:shadow-none font-semibold text-lg">
             <div id="infoRUC">
                 <input type="text" id="rucCliente" placeholder="RUC" class="border w-full border-none outline-none print:shadow-none">
             </div>
         </section>        
         <!-- Botón para agregar producto -->
-        <button id="btnAgregarProducto" class="mb-2 bg-green-700 hover:bg-green-400 text-white font-bold py-2 px-4 rounded print:hidden">
-            &#43;
-        </button>        
+        <button type="button" id="btnAgregarProducto" class="mb-2 bg-green-700 hover:bg-green-400 text-white font-bold py-2 px-4 rounded print:hidden">
+            &#43; <!-- ícono unicode para agregar -->
+        </button>
+        
+        <button type="button" id="btnGuardar" class="mb-2 bg-blue-700 hover:bg-blue-400 text-white font-bold py-2 px-4 rounded print:hidden">
+            &#128190; <!-- ícono unicode para guardar -->
+        </button>
+                <!-- Botón de búsqueda -->
+        <button type="button" id="btnBuscarCotizacion" class="bg-purple-700 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded print:hidden">
+            &#128270; <!-- ícono de lupa -->
+        </button>
+
+        <!-- Campo de entrada oculto inicialmente -->
+        <div id="buscarCotizacion" class="print:hidden" style="display: none;">
+            <input type="text" id="inputBuscarCotizacion" placeholder="Número de Cotización" class="border py-2 px-4">
+            <button type="button" onclick="cargarCotizacion()" class="bg-blue-700 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded">Cargar</button>
+        </div>        
+
+        
 
         <section class="mb-8">
             <table class="min-w-full table-auto">
@@ -63,7 +80,7 @@
                 </tbody>                
             </table>
         </section>
-        
+    </form>
         <!-- Totales -->
         <section class="text-right mb-8">
             <p class="mb-2">Subtotal: <span id="subtotal">C$0.00</span></p>
@@ -75,6 +92,7 @@
         <button id="btnImprimir" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded print:hidden">
             Imprimir Cotización
         </button>
+        
 
         <!-- Notas Adicionales -->
         <section class="mb-8">
@@ -159,14 +177,14 @@
         }
 
 
-// Función para validar la entrada numérica
-function validarEntradaNumerica(e) {
-    const valor = e.target.textContent;
-    if (!/^\d*\.?\d*$/.test(valor)) { // Permite números y puntos decimales
-        alert("Por favor, ingrese solo números.");
-        e.target.textContent = ''; // Limpia el contenido si no es numérico
-    }
-}
+            // Función para validar la entrada numérica
+            function validarEntradaNumerica(e) {
+                const valor = e.target.textContent;
+                if (!/^\d*\.?\d*$/.test(valor)) { // Permite números y puntos decimales
+                    alert("Por favor, ingrese solo números.");
+                    e.target.textContent = ''; // Limpia el contenido si no es numérico
+                }
+            }
 
     
         // Función para actualizar el subtotal y total
@@ -216,10 +234,78 @@ function validarEntradaNumerica(e) {
             return true;
         }
 
+                function cargarCotizacion() {
+            const idCotizacion = document.getElementById('inputBuscarCotizacion').value.trim();
+
+            if (idCotizacion) {
+                fetch(`cargarCotizacion.php?idCotizacion=${idCotizacion}`)
+                    .then(response => response.json())
+                    .then(datosCotizacion => {
+                        // Establecer los valores del formulario con los datos de la cotización
+                        document.getElementById('numeroCotizacion').textContent = datosCotizacion.idCotizacion;
+                        document.getElementById('nombreCliente').value = datosCotizacion.cliente.nombre;
+                        document.getElementById('rucCliente').value = datosCotizacion.cliente.ruc;
+
+                        // Limpia la tabla existente
+                        const tbody = document.getElementById('productosCotizacion');
+                        tbody.innerHTML = '';
+
+                        // Agrega los productos a la tabla
+                        datosCotizacion.productos.forEach(({ producto, cantidad, precio }) => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td class="border px-4 py-2 text-center w-[470px]" contenteditable="true">${producto}</td>
+                                <td class="border px-4 py-2 text-center w-48" contenteditable="true">${cantidad}</td>
+                                <td class="border px-4 py-2 text-center w-48" contenteditable="true">${precio}</td>
+                                <td class="border px-4 py-2 text-center w-48"></td>
+                                <td class="border px-4 py-2 text-center w-20 print:hidden">
+                                    <button class="eliminarProducto text-red-500">&#10006;</button>
+                                </td>`;
+                            tbody.appendChild(tr);
+
+                            // Agregar funcionalidad de eliminación a cada nuevo botón de eliminar
+                            tr.querySelector('.eliminarProducto').addEventListener('click', () => {
+                                tr.remove();
+                                actualizarTotales();
+                            });
+                        });
+
+                        // Actualiza los totales
+                        actualizarTotales();
+                    })
+                    .catch(error => {
+                        console.error('Error al cargar la cotización:', error);
+                        alert('Error al cargar la cotización. Por favor, verifica el número ingresado.');
+                    });
+            } else {
+                alert('Por favor, ingresa un número de cotización.');
+            }
+        }
+
 
     
         // Event listeners y lógica inicial
         document.addEventListener('DOMContentLoaded', () => {
+
+            document.getElementById('btnBuscarCotizacion').addEventListener('click', () => {
+                const buscarCotizacionDiv = document.getElementById('buscarCotizacion');
+                if (buscarCotizacionDiv.style.display === 'none' || buscarCotizacionDiv.style.display === '') {
+                    buscarCotizacionDiv.style.display = 'block';
+                } else {
+                    buscarCotizacionDiv.style.display = 'none';
+                }
+            });
+
+
+             // Obtener el último número de cotización
+            fetch('obtenerUltimoNumeroCotizacion.php')
+                .then(response => response.text())
+                .then(ultimoNumero => {
+                    const nuevoNumero = parseInt(ultimoNumero) + 1;
+                    document.getElementById('numeroCotizacion').textContent = `#${nuevoNumero}`;
+                })
+                .catch(error => console.error('Error al obtener el último número de cotización:', error));
+        });
             document.getElementById('fechaCotizacion').textContent = formatAMPM(new Date());
     
             const fechaValidez = new Date();
@@ -266,7 +352,45 @@ function validarEntradaNumerica(e) {
             const nombreCliente = document.getElementById('nombreCliente');
             numeroCotizacion.addEventListener('input', actualizarTitulo);
             nombreCliente.addEventListener('input', actualizarTitulo);
-        });
+
+        function guardarCotizacion() {
+    // Recolectar datos del formulario
+    const numeroCotizacion = document.getElementById('numeroCotizacion').textContent.trim();
+    const nombreCliente = document.getElementById('nombreCliente').value.trim();
+    const rucCliente = document.getElementById('rucCliente').value.trim();
+
+    // Recolectar datos de los productos
+    const productos = [];
+    document.querySelectorAll('#productosCotizacion tr').forEach(tr => {
+        const producto = tr.cells[0].textContent.trim();
+        const cantidad = tr.cells[1].textContent.trim();
+        const precio = tr.cells[2].textContent.trim();
+        productos.push({ producto, cantidad, precio });
+    });
+
+    // Crear el objeto de datos
+    const datosCotizacion = {
+        idCotizacion: numeroCotizacion,
+        cliente: { nombre: nombreCliente, ruc: rucCliente },
+        productos
+    };
+
+    // Enviar los datos al backend
+    fetch('guardarCotizacion.php', {
+        method: 'POST',
+        body: JSON.stringify({ datosCotizacion }),
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.text())
+    .then(data => alert(data))
+    .catch(error => console.error('Error:', error));
+}
+
+document.getElementById('btnGuardar').addEventListener('click', guardarCotizacion);
+
+
     </script>
     
 </body>
